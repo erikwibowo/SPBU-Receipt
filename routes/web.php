@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\MenuController;
+use App\Http\Controllers\ReceiptController;
 use App\Http\Controllers\SpbuController;
 use App\Http\Controllers\TemplateController;
 use Illuminate\Support\Facades\Route;
@@ -58,4 +59,10 @@ Route::group(['prefix' => 'admin',  'middleware' => 'adminauth'], function () {
     Route::put('template/update', [TemplateController::class, 'update'])->name('admin.template.update');
     Route::delete('template/delete', [TemplateController::class, 'delete'])->name('admin.template.delete');
     Route::post('template/data', [TemplateController::class, 'data'])->name('admin.template.data');
+    //RECEIPT
+    Route::get('struk', [ReceiptController::class, 'index'])->name('admin.struk.index');
+    Route::post('struk/create', [ReceiptController::class, 'create'])->name('admin.struk.create');
+    Route::put('struk/update', [ReceiptController::class, 'update'])->name('admin.struk.update');
+    Route::delete('struk/delete', [ReceiptController::class, 'delete'])->name('admin.struk.delete');
+    Route::post('struk/data', [ReceiptController::class, 'data'])->name('admin.struk.data');
 });
