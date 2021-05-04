@@ -132,6 +132,24 @@
     height: 300,
     placeholder: "..."
   });
+  
+  $(".daterange").daterangepicker({
+      autoUpdateInput: false,
+      locale: {
+          cancelLabel: 'Clear'
+      },
+      ranges: {
+        'Hari Ini': [moment(), moment()],
+        'Kemarin': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+        '7 Hari Terakhir': [moment().subtract(6, 'days'), moment()],
+        '30 Hari Terakhir': [moment().subtract(29, 'days'), moment()],
+        'Bulan Ini': [moment().startOf('month'), moment().endOf('month')],
+        'Bulan Lalu': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+      }
+  });
+  $('.daterange').on('cancel.daterangepicker', function(ev, picker) {
+    $(this).val('');
+  });
 </script>
 </body>
 </html>

@@ -14,13 +14,25 @@ class ReceiptController extends Controller
     public function index(Request $request)
     {
         if ($request->ajax()) {
-            $data = Receipt::latest();
+            $data = Receipt::orderBy('id', 'desc');
             return DataTables::of($data)
+                ->filter(function ($query) use ($request) {
+                    if (isset($request->filter)) {
+                        $filter = explode(" - ", $request->filter);
+                        $start = date("Y-m-d", strtotime($filter[0]));
+                        $end = date("Y-m-d", strtotime($filter[1]));
+                        $query->whereDate('created_at', '>=', $start)->whereDate('created_at', '<=', $end)->orderBy('id', 'desc');
+                    }
+                })
                 ->addColumn('action', function ($row) {
-                    $btn = '<div class="btn-group"><button type="button" data-id="' . $row->id . '" class="btn btn-primary btn-sm btn-edit"><i class="fa fa-eye"></i></button><button type="button" data-id="' . $row->id . '" data-name="' . $row->receipt . '" class="btn btn-danger btn-sm btn-delete"><i class="fa fa-trash"></i></button></div>';
+                    $btn = '<div class="btn-group"><button type="button" data-id="' . $row->id . '" class="btn btn-primary btn-sm btn-edit"><i class="fa fa-eye"></i></button><a target="_ blank" href="'.route('admin.struk.print', $row->id).'" type="button" data-id="' . $row->id . '" class="btn btn-warning btn-sm btn-print"><i class="fa fa-print"></i></a><button type="button" data-id="' . $row->id . '" data-name="' . $row->receipt_number . '" class="btn btn-danger btn-sm btn-delete"><i class="fa fa-trash"></i></button></div>';
                     return $btn;
                 })
-                ->rawColumns(['action'])
+                ->addColumn('spbu', function($row){
+                    return $row->spbu->name;
+                })
+                ->editColumn('date', '{{ date("d M Y H:i", strtotime($date)) }}')
+                ->rawColumns(['action', 'spbu'])
                 ->make(true);
         }
         $x['title'] = "Data Struk";
@@ -117,7 +129,20 @@ class ReceiptController extends Controller
 
     public function data(Request $request)
     {
-        echo json_encode(Receipt::where(['id' => $request->input('id')])->first());
+        $data = Receipt::where(['id' => $request->input('id')])->first();
+        $a['id']                = $data->id;
+        $a['receipt_number']    = $data->receipt_number;
+        $a['date']              = date('Y-m-d\TH:i', strtotime($data->date));
+        $a['shift']             = $data->shift;
+        $a['pump_number']       = $data->pump_number;
+        $a['product']           = $data->product;
+        $a['rate']              = $data->rate;
+        $a['volume']            = $data->volume;
+        $a['price']             = $data->price;
+        $a['vehicle_number']    = $data->vehicle_number;
+        $a['operator']          = $data->operator;
+        $a['spbu_id']           = $data->spbu_id;
+        echo json_encode($a);
     }
 
     public function delete(Request $request)
@@ -132,5 +157,19 @@ class ReceiptController extends Controller
             session()->flash('notif', $th->getMessage());
         }
         return redirect(route('admin.struk.index'));
+    }
+
+    public function print(Request $request, $id)
+    {
+        $data = Receipt::where(['id' => $id])->first();
+        $x['data']  = $data;
+        return view('admin.receipt.'.$data->spbu->template_id, $x);
+    }
+
+    public function printAll(Request $request)
+    {
+        $data = Receipt::get();
+        $x['data']  = $data;
+        return view('admin.receipt.all', $x);
     }
 }

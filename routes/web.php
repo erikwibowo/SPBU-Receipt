@@ -65,4 +65,6 @@ Route::group(['prefix' => 'admin',  'middleware' => 'adminauth'], function () {
     Route::put('struk/update', [ReceiptController::class, 'update'])->name('admin.struk.update');
     Route::delete('struk/delete', [ReceiptController::class, 'delete'])->name('admin.struk.delete');
     Route::post('struk/data', [ReceiptController::class, 'data'])->name('admin.struk.data');
+    Route::post('struk/print', [ReceiptController::class, 'printAll'])->name('admin.struk.print-all');
+    Route::get('struk/print/{id}', [ReceiptController::class, 'print'])->name('admin.struk.print');
 });

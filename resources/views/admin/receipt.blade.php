@@ -4,8 +4,13 @@
         <div class="col-md-12">
             <div class="card">
                 <div class="card-header">
-                    <h3 class="card-title">
+                    <h3 class="card-title d-flex">
                         <a href="#" class="btn btn-sm btn-success" data-toggle="modal" data-target="#modal-tambah" data-backdrop="static" data-keyboard="false"><i class="fas fa-plus"></i> Tambah</a>
+                        <form target="_blank" action="{{ route('admin.struk.print-all') }}" method="POST" class="d-flex">
+                            @csrf
+                            <input type="text" name="filter" id="filter" class="form-control ml-2 daterange" value="{{ Request::input('filter') }}" placeholder="Semua Data" readonly />
+                            <button class="btn btn-primary ml-2"><i class="fas fa-print"></i></button>
+                        </form>
                     </h3>
                 </div>
                 <!-- /.card-header -->
@@ -14,13 +19,14 @@
                     <table class="table table-bordered table-hover table-striped yajra-datatable" style="width: 100%">
                         <thead>
                             <tr>
-                                <th>No. Transaksi</th>
+                                <th>SPBU</th>
+                                <th>No. Trans</th>
                                 <th>Shift</th>
-                                <th>Tanggal</th>
+                                <th>Tgl</th>
                                 <th>Pompa</th>
                                 <th>Produk</th>
-                                <th>Harga/Liter</th>
-                                <th>Voume (L)</th>
+                                <th>Harga</th>
+                                <th>Voume</th>
                                 <th>Total</th>
                                 <th>No. Kendaraan</th>
                                 <th>Operator</th>
@@ -38,12 +44,19 @@
         </div>
     </div>
 <script>
-    $(function() {
+    $(document).ready(function() {
         var table = $('.yajra-datatable').DataTable({
             processing: true,
             serverSide: true,
-            ajax: "{{ route('admin.struk.index') }}",
+            stateSave: true,
+            ajax: {
+                url: "{{ route('admin.struk.index') }}",
+                data: function (d) {
+                    d.filter = $("#filter").val();
+                }
+            },
             columns: [
+                {data: 'spbu',},
                 {data: 'receipt_number',},
                 {data: 'shift',},
                 {data: 'date',},
@@ -57,8 +70,13 @@
                 {data: 'action', orderable: false, searchable: true },
             ]
         });
-    });
-    $(document).ready(function() {
+
+        $("#filter").on('apply.daterangepicker', function(ev, picker) {
+            $(this).val(picker.startDate.format('MM/DD/YYYY') + ' - ' + picker.endDate.format('MM/DD/YYYY'));
+            $("#print").attr("href", "{{ route('admin.struk.print-all') }}?filter="+$(this).val());
+            table.ajax.reload();
+        });
+
         $(document).on("click", '.btn-edit', function() {
             let id = $(this).attr("data-id");
             $('#modal-loading').modal({backdrop: 'static', keyboard: false, show: true});
@@ -109,12 +127,12 @@
             $("#tprice").val(total($("#trate").val(), $(this).val()));
         });
 
-        $("#erate").on("input", function(){
-            $("#eprice").val(total($(this).val(), $("#evolume").val()));
+        $("#rate").on("input", function(){
+            $("#price").val(total($(this).val(), $("#volume").val()));
         });
 
-        $("#evolume").on("input", function(){
-            $("#eprice").val(total($("#erate").val(), $(this).val()));
+        $("#volume").on("input", function(){
+            $("#price").val(total($("#rate").val(), $(this).val()));
         });
 
         function total(rate, volume){
@@ -145,6 +163,19 @@
         <div class="modal-body">
             <form action="{{ route('admin.struk.create') }}" method="POST" enctype="multipart/form-data">
                 @csrf
+                <div class="input-group">
+                    <label>SPBU</label>
+                    <div class="input-group">
+                        <select class="form-control @error('spbu_id') is-invalid @enderror" name="spbu_id" value="{{ old('spbu_id') }}" required>
+                            @foreach ($spbu as $i)
+                                <option value="{{ $i->id }}">{{ $i->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('spbu_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
                 <div class="input-group">
                     <label>No. Transaksi*</label>
                     <div class="input-group">
@@ -196,7 +227,7 @@
                 <div class="input-group">
                     <label>Harga/Liter*</label>
                     <div class="input-group">
-                        <input type="number" class="form-control @error('rate') is-invalid @enderror" placeholder="Harga/Liter" name="rate" id="trate" value="{{ old('rate') }}" required>
+                        <input type="number" min=".5" step=".01" class="form-control @error('rate') is-invalid @enderror" placeholder="Harga/Liter" name="rate" id="trate" value="{{ old('rate') }}" required>
                         @error('rate')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -205,7 +236,7 @@
                 <div class="input-group">
                     <label>Volume*</label>
                     <div class="input-group">
-                        <input type="number" class="form-control @error('volume') is-invalid @enderror" placeholder="Volume" name="volume" id="tvolume" value="{{ old('volume') }}" required>
+                        <input type="number" min=".5" step=".01" class="form-control @error('volume') is-invalid @enderror" placeholder="Volume" name="volume" id="tvolume" value="{{ old('volume') }}" required>
                         @error('volume')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -214,7 +245,7 @@
                 <div class="input-group">
                     <label>Total*</label>
                     <div class="input-group">
-                        <input type="number" class="form-control @error('price') is-invalid @enderror" placeholder="Total" name="price" id="tprice" value="{{ old('price') }}" required readonly>
+                        <input type="number" min=".5" step=".01" class="form-control @error('price') is-invalid @enderror" placeholder="Total" name="price" id="tprice" value="{{ old('price') }}" required readonly>
                         @error('price')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -234,19 +265,6 @@
                     <div class="input-group">
                         <input type="text" class="form-control @error('operator') is-invalid @enderror" placeholder="Operator" name="operator" value="{{ old('operator') }}">
                         @error('operator')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>SPBU</label>
-                    <div class="input-group">
-                        <select class="form-control @error('spbu_id') is-invalid @enderror" name="spbu_id" value="{{ old('spbu_id') }}" required>
-                            @foreach ($spbu as $i)
-                                <option value="{{ $i->id }}">{{ $i->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('spbu_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>
@@ -275,6 +293,19 @@
             <form action="{{ route('admin.struk.update') }}" method="POST" enctype="multipart/form-data">
                 @csrf
                 @method('PUT')
+                <div class="input-group">
+                    <label>SPBU</label>
+                    <div class="input-group">
+                        <select class="form-control @error('spbu_id') is-invalid @enderror" name="spbu_id" id="spbu_id" value="{{ old('spbu_id') }}" required>
+                            @foreach ($spbu as $i)
+                                <option value="{{ $i->id }}">{{ $i->name }}</option>
+                            @endforeach
+                        </select>
+                        @error('spbu_id')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                    </div>
+                </div>
                 <div class="input-group">
                     <label>No. Transaksi*</label>
                     <div class="input-group">
@@ -326,7 +357,7 @@
                 <div class="input-group">
                     <label>Harga/Liter*</label>
                     <div class="input-group">
-                        <input type="number" class="form-control @error('rate') is-invalid @enderror" placeholder="Harga/Liter" name="rate" id="erate" value="{{ old('rate') }}" required>
+                        <input type="number" min=".5" step=".01" class="form-control @error('rate') is-invalid @enderror" placeholder="Harga/Liter" name="rate" id="rate" value="{{ old('rate') }}" required>
                         @error('rate')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -335,7 +366,7 @@
                 <div class="input-group">
                     <label>Volume*</label>
                     <div class="input-group">
-                        <input type="number" class="form-control @error('volume') is-invalid @enderror" placeholder="Volume" name="volume" id="evolume" value="{{ old('volume') }}" required>
+                        <input type="number" min=".5" step=".01" class="form-control @error('volume') is-invalid @enderror" placeholder="Volume" name="volume" id="volume" value="{{ old('volume') }}" required>
                         @error('volume')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -344,7 +375,7 @@
                 <div class="input-group">
                     <label>Total*</label>
                     <div class="input-group">
-                        <input type="number" class="form-control @error('price') is-invalid @enderror" placeholder="Total" name="price" id="eprice" value="{{ old('price') }}" required readonly>
+                        <input type="number" min=".5" step=".01" class="form-control @error('price') is-invalid @enderror" placeholder="Total" name="price" id="price" value="{{ old('price') }}" required readonly>
                         @error('price')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
@@ -364,19 +395,6 @@
                     <div class="input-group">
                         <input type="text" class="form-control @error('operator') is-invalid @enderror" placeholder="Operator" name="operator" id="operator" value="{{ old('operator') }}">
                         @error('operator')
-                        <div class="invalid-feedback">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                <div class="input-group">
-                    <label>SPBU</label>
-                    <div class="input-group">
-                        <select class="form-control @error('spbu_id') is-invalid @enderror" name="spbu_id" id="spbu_id" value="{{ old('spbu_id') }}" required>
-                            @foreach ($spbu as $i)
-                                <option value="{{ $i->id }}">{{ $i->name }}</option>
-                            @endforeach
-                        </select>
-                        @error('spbu_id')
                         <div class="invalid-feedback">{{ $message }}</div>
                         @enderror
                     </div>

@@ -8,4 +8,9 @@ use Illuminate\Database\Eloquent\Model;
 class Receipt extends Model
 {
     use HasFactory;
+    
+    public function spbu()
+    {
+        return $this->belongsTo(Spbu::class);
+    }
 }
